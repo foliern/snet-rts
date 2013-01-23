@@ -78,6 +78,9 @@ static void *EntityTask(void *arg)
 
 int SNetThreadingInit(int argc, char **argv)
 {
+
+
+
 	lpel_config_t config;
 	int i, res;
 	char *mon_elts = NULL;
@@ -162,7 +165,7 @@ int SNetThreadingInit(int argc, char **argv)
 
 	SNetAssignInit(config.num_workers);
 
-	res = LpelInit(&config);
+	res = LpelInit(&config,argc ,argv);
 	if (res != LPEL_ERR_SUCCESS) {
 		SNetUtilDebugFatal("Could not initialize LPEL!\n");
 	}
