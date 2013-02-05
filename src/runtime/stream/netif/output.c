@@ -162,9 +162,10 @@ static void GlobOutputTask(snet_entity_t *ent, void* data)
             hnd->buffer = newstream;
           }
           break;
+        case REC_sort_end:
+          printf("read sort end from %d\n", SNetStreamGetId(instream));
         case REC_data:
         case REC_collect:
-        case REC_sort_end:
         case REC_trigger_initialiser:
           printRec(rec, hnd);
           break;

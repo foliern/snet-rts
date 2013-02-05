@@ -142,10 +142,15 @@ int SNetStreamTryWrite(snet_stream_desc_t * sd, void *item)
   return LpelStreamTryWrite((lpel_stream_desc_t *) sd, item);
 }
 
+int SNetStreamGetId(snet_stream_desc_t *sd){
+	return LpelStreamGetId((lpel_stream_desc_t *) sd);
+}
+
 snet_stream_desc_t *SNetStreamPoll(snet_streamset_t * set)
 {
   return (snet_stream_desc_t *) LpelStreamPoll((lpel_streamset_t *) set);
 }
+
 
 void SNetStreamsetPut(snet_streamset_t * set, snet_stream_desc_t * sd)
 {
@@ -196,4 +201,3 @@ void SNetStreamIterRemove(snet_stream_iter_t * iter)
 {
   LpelStreamIterRemove((lpel_stream_iter_t *) iter);
 }
-

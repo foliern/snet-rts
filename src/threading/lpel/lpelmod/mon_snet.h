@@ -64,6 +64,6 @@ void SNetThreadingMonEvent(struct mon_task_t *mt,
 #define WORKER_TASK_ASSIGN_EVENT		'G'
 #define WORKER_END_EVENT 						'E'
 
-#define LOG_FORMAT_VERSION					"Log format version 2.3  (since 28/09/2012)"
+#define LOG_FORMAT_VERSION					"Log format version 2.4 (since 01/12/2012)"
 
 #endif /* _MON_SNET_H_ */

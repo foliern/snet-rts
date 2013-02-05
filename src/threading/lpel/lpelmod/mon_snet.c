@@ -411,12 +411,12 @@ static mon_worker_t *MonCbWrapperCreate( mon_task_t *mt)
 
 	/* build filename */
 	memset(fname, 0, MON_FNAME_MAXLEN+1);
-	if (strlen(mt->name)>0) {
+	if (mt->tid < 0) {
 		snprintf( fname, MON_FNAME_MAXLEN,
 				"%sn%02d_%s%s", prefix, mon_node, mt->name, suffix);
 	} else {
 		snprintf( fname, MON_FNAME_MAXLEN,
-				"%swrapper%02lu%s", prefix, mt->tid, suffix);
+				"%sn%02lu_%s_%d%s", prefix, mon_node, mt->name, mt->tid, suffix);
 	}
 
 	/* open logfile */
@@ -638,7 +638,7 @@ static void MonCbTaskStop( mon_task_t *mt, lpel_taskstate_t state)
 
 static mon_stream_t *MonCbStreamOpen(mon_task_t *mt, unsigned int sid, char mode)
 {
-	if (!mt || !FLAG_STREAMS(mt)) return NULL;
+	if (!mt || !(FLAG_STREAMS(mt) | FLAG_TASK(mt))) return NULL;
 
 	mon_stream_t *ms = malloc(sizeof(mon_stream_t));
 	ms->sid = sid;
@@ -786,10 +786,14 @@ void SNetThreadingMonInit(lpel_monitoring_cb_t *cb, int node, int flag)
 	}
 
 	if (mon_flags & SNET_MON_TASK) {
-		cb->task_destroy = MonCbTaskDestroy;
-		cb->task_assign  = MonCbTaskAssign;
-		cb->task_start   = MonCbTaskStart;
-		cb->task_stop    = MonCbTaskStop;
+		cb->task_destroy 				= MonCbTaskDestroy;
+		cb->task_assign  				= MonCbTaskAssign;
+		cb->task_start   				= MonCbTaskStart;
+		cb->task_stop    				= MonCbTaskStop;
+		cb->stream_blockon      = MonCbStreamBlockon;				// used for task event, task is blocked on input/output
+		cb->stream_open         = MonCbStreamOpen;
+		cb->stream_close        = MonCbStreamClose;
+		cb->stream_replace      = MonCbStreamReplace;
 	}
 
 	if(mon_flags & SNET_MON_STREAM) {

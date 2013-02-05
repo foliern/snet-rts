@@ -13,16 +13,17 @@ Flags:
 =======================================
 FORMAT
 
-There are two kinds of monitoring files: map files and log files.
-All files start with the version of log format --> easy to keep track of
+There are 3 kinds of monitoring files: map files and worker log files and wrapper log files.
 Old version: 2.1 (since 10/01/2012)
-Current version: 2.2 (since 05/03/2012)
+Old version: 2.2 (since 05/03/2012)
+Current version: 2.4 (since 01/12/2012 --> for CentralQ approach)
 
+The conductor (master) does not have any log file.
 
 Map files
 ---------
-Map files records the mapping of all tasks among workers. Each entry descripes the mapping of one task. The format of mapping entries is defined as following:
-<task-id> [ NET-PATH ] <space> <box-name> <space> <worker-id><end-character>
+Map files records the mapping of snet entity to lpel task. Each entry descripes the mapping of one task. The format of mapping entries is defined as following:
+<task-id> [ NET-PATH ] <space> <box-name> <space> <end-character>
 NET-PATH: {:POS} *
 POS: S<num> ... position within serial composition (indizes start with 1)
      P ... border line of parallel composition (split/collect)
@@ -33,23 +34,24 @@ POS: S<num> ... position within serial composition (indizes start with 1)
 
 <task-id>  ... identification of the task, used to look up its internal behaviours in log files
 <box-name> ... the S-Net box name, or the type for an implicit entity
-<worker-id> ... starts with 0; -1 indicates global threads for operating inputs and outputs
 <space> ... space character
 <end-character> ... '#' character
 
 
-Log files
+Worker Log files: mon_n<node_num>_worker<worker_num>.log
 ---------
 Each worker has one log file recording scheduling events. Information of each event is represented by one entry in the log file. Each entry ends with "#". (This is because the efficiency of the monitoring framework. To be read easily, "#" can be replaced by "\n")
 There are 2 kinds of events: worker events, task events.
 - Worker events:
 	+ Worker started: Entry = <timestamp> <start-character> <end-character>
-	+ Worker waited: Entry = <timestamp> <wait-character> <waiting time> <end-character>
-	+ Worker ended: Entry = <timestamp> <end-character> <end-character>
+	+ Worker request for a task: Entry = <timestamp> <request-character> <end-character>
+  + Worker is assigned a task: Entry = <timestamp> <assign-character> <end-character>
+	+ Worker ended: Entry = <timestamp> <w-end-character> <end-character>
 
-  <start-character> ... 'S' character
-  <wait-character> ... 'W' character
-  <end-character> ... 'E' character
+  <start-character>   ... 'S' character
+  <request-character> ... 'Q' character
+  <assign-character>  ... 'G' character
+  <w-end-character>   ... 'E' character
 
 
 - Task events:
@@ -83,4 +85,15 @@ There are 2 kinds of events: worker events, task events.
 - Load Information:
  + two entries for two worker events: worker started and worker ended --> provide the total running time of the worker (including computational time and waiting time)
  + WC<waiting count>WT<total waiting time>
+
+
+
+Wrapper Log File: mon_n<node_number>_<task_name>_<task_id>.log
+---------
+In LPEL, there are some tasks which can run separately. Those are wrapper tasks, sink/source tasks. These tasks are not controlled by the scheduler but are executed by their own thread (or can say their own worker).
+Each of these tasks has their own log files. These log files has the same format as worker log file.
+The only different is:
+  - Thread/Worker waiting event: As the thread has only 1 task, when the task is blocked the worker has to wait.This is represent by the the entry = <timestamp> <waiting-character> <end-character>
+      <wating-character> ... 'Q'
+  - Note that this is the same as the worker waiting event in worker-log-files but slightly different meaning.
 

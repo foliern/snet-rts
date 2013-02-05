@@ -24,16 +24,19 @@
 
 static int num_cpus = 0;
 static int num_workers = 0;
-static int num_others = 0;
-
+static int cpu_others = 0;
+static int cpu_sosi = 0;
+static int cpu_workers = 0;
 
 static FILE *mapfile = NULL;
 static int mon_flags = 0;
 
+
+
 /**
- * use the Distributed S-Net placement operators for worker placement
+ * support source/sink
  */
-static bool dloc_placement = false;
+static bool using_sosi = false;
 
 
 static size_t GetStacksize(snet_entity_descr_t descr)
@@ -88,27 +91,36 @@ int SNetThreadingInit(int argc, char **argv)
 
 	char fname[20+1];
 
-	config.flags = LPEL_FLAG_PINNED;
+	config.flags = LPEL_FLAG_NONE | LPEL_FLAG_PINNED;		// pinned by default
 
 	for (i=0; i<argc; i++) {
 		if(strcmp(argv[i], "-m") == 0 && i + 1 <= argc) {
 			/* Monitoring level */
 			i = i + 1;
 			mon_elts = argv[i];
+		} else if (strcmp(argv[i], "-np") == 0) {	// no pinned
+			config.flags ^= LPEL_FLAG_PINNED;
 		} else if(strcmp(argv[i], "-excl") == 0 ) {
 			/* Assign realtime priority to workers*/
 			config.flags |= LPEL_FLAG_EXCLUSIVE;
-		} else if(strcmp(argv[i], "-dloc") == 0 ) {
-			/* Use distributed s-net location placement */
-			dloc_placement = true;
-		} else if(strcmp(argv[i], "-wo") == 0 && i + 1 <= argc) {
+		} else if(strcmp(argv[i], "-co") == 0 && i + 1 <= argc) {
 			/* Number of cores for others */
 			i = i + 1;
-			num_others = atoi(argv[i]);
+			cpu_others = atoi(argv[i]);
 		} else if(strcmp(argv[i], "-w") == 0 && i + 1 <= argc) {
 			/* Number of workers */
 			i = i + 1;
 			num_workers = atoi(argv[i]);
+		} else if (strcmp(argv[i], "-cw") == 0 && i + 1 <= argc) {
+			/* number of cores for workers */
+			i = i + 1;
+			cpu_workers = atoi(argv[i]);
+		}else if(strcmp(argv[i], "-css") == 0 && i + 1 <= argc) {
+			/* number of cores for source/sink */
+			config.flags |= LPEL_FLAG_SOSI;
+			using_sosi = true;
+			i = i + 1;
+			cpu_sosi = atoi(argv[i]);
 		}
 	}
 
@@ -147,25 +159,24 @@ int SNetThreadingInit(int argc, char **argv)
 	}
 
 	if (num_workers == 0) {
-		config.proc_workers = num_cpus;
-		//config.num_workers = num_cpus + 1;
-		config.num_workers = num_cpus;
-		config.proc_others = num_others;
+		config.num_workers = num_cpus - cpu_others - cpu_sosi; // including master
 	} else {
-		config.proc_workers = num_cpus;
 		config.num_workers = num_workers;
-		config.proc_others = num_others;
 	}
-	num_workers = config.num_workers;
+	if (cpu_workers == 0)
+		config.proc_workers = num_cpus - cpu_others - cpu_sosi;
+	else
+		config.proc_workers = cpu_workers;
+
+	config.proc_others = cpu_others;
+	config.proc_sosi = cpu_sosi;
 
 #ifdef USE_LOGGING
 	/* initialise monitoring module */
 	SNetThreadingMonInit(&config.mon, SNetDistribGetNodeId(), mon_flags);
 #endif
 
-	SNetAssignInit(config.num_workers);
-
-	res = LpelInit(&config,argc ,argv);
+	res = LpelInit(&config);
 	if (res != LPEL_ERR_SUCCESS) {
 		SNetUtilDebugFatal("Could not initialize LPEL!\n");
 	}
@@ -268,29 +279,36 @@ int SNetThreadingSpawn(snet_entity_t *ent)
   )
  */
 {
-	int worker = -1;
+	int map = LPEL_MAP_OTHERS;
 	snet_entity_descr_t type = SNetEntityDescr(ent);
+	int location = SNetEntityNode(ent);
 	const char *name = SNetEntityName(ent);
 
-	if ( type != ENTITY_other) {
-		worker = 0;
+	if (using_sosi) {
+		if (location > 0)
+			map = LPEL_MAP_SOSI;
+		else if (type != ENTITY_other)
+			map = LPEL_MAP_MASTER;
+	} else if ( type != ENTITY_other) {
+		map = LPEL_MAP_MASTER;
 	}
 
+
 	lpel_task_t *t = LpelTaskCreate(
-			worker,
+			map,
 			//(lpel_taskfunc_t) func,
 			EntityTask,
 			ent,
 			GetStacksize(type)
 	);
 
-	/** set limit number of records a task can process in once */
-	setTaskRecLimit(type, t);
+	if (!using_sosi)
+		setTaskRecLimit(type, t);	 /** set limit number of records a task can process in once (not for source/sink)*/
 
 #ifdef USE_LOGGING
 	if (mon_flags & SNET_MON_TASK){
 		mon_task_t *mt = SNetThreadingMonTaskCreate(
-				LpelTaskGetID(t),
+				LpelTaskGetId(t),
 				name
 		);
 		LpelTaskMonitor(t, mt);
@@ -298,7 +316,7 @@ int SNetThreadingSpawn(snet_entity_t *ent)
 	}
 
 	if ((mon_flags & SNET_MON_MAP) && mapfile) {
-		int tid = LpelTaskGetID(t);
+		int tid = LpelTaskGetId(t);
 		// FIXME: change to binary format
 		(void) fprintf(mapfile, "%d%s%c", tid, SNetEntityStr(ent), END_LOG_ENTRY);
 	}
