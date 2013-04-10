@@ -3,6 +3,7 @@
 #include <string.h>
 #include <assert.h>
 
+
 #include "glue_snet.h"
 #include "threading.h"
 #include "hrc_lpel.h"
@@ -26,6 +27,37 @@ static int proc_workers = -1;
 static int mon_flags = 0;
 static int rec_lim = 1;
 static FILE *mapfile = NULL;
+
+/*
+ * Find the first occurrence of find in s, where the search is limited to the
+ * first slen characters of s.
+ */
+char *
+strnstr_ownimpl(s, find, slen)
+        const char *s;
+        const char *find;
+        size_t slen;
+{
+        char c, sc;
+        size_t len;
+
+        if ((c = *find++) != '\0') {
+                len = strlen(find);
+                do {
+                        do {
+                                if ((sc = *s++) == '\0' || slen-- < 1)
+                                        return (NULL);
+                        } while (sc != c);
+                        if (len > slen)
+                                return (NULL);
+                } while (strncmp(s, find, len) != 0);
+                s--;
+        }
+        return ((char *)s);
+}
+
+
+
 
 /**
  * use the Distributed S-Net placement operators for worker placement
@@ -132,6 +164,11 @@ int SNetThreadingInit(int argc, char **argv)
 	/* initialise monitoring module */
 	SNetThreadingMonInit(&config.mon, SNetDistribGetNodeId(), mon_flags);
 #endif
+	
+//added by Simon becaus we have only one worker for each core
+	config.num_workers=1;
+	config.proc_workers=1;
+//end add
 
 	res = LpelInit(&config);
 	if (res != LPEL_ERR_SUCCESS) {
@@ -164,7 +201,7 @@ int SNetThreadingSpawn(snet_entity_t *ent)
 	int location = LPEL_MAP_MASTER;
 	int l1 = strlen(SNET_SOURCE_PREFIX);
 	int l2 = strlen(SNET_SINK_PREFIX);
-	if ((sosi_placement && (strnstr(name, SNET_SOURCE_PREFIX, l1) || strnstr(name, SNET_SINK_PREFIX, l2))) 	// sosi placemnet and entity is source/sink
+	if ((sosi_placement && (strnstr_ownimpl(name, SNET_SOURCE_PREFIX, l1) || strnstr_ownimpl(name, SNET_SINK_PREFIX, l2))) 	// sosi placemnet and entity is source/sink
 			|| type == ENTITY_other)	// wrappers
 		location = LPEL_MAP_OTHERS;
 

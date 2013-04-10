@@ -26,6 +26,35 @@ static int proc_workers = -1;
 static int mon_flags = 0;
 static FILE *mapfile = NULL;
 
+/*
+ * Find the first occurrence of find in s, where the search is limited to the
+ * first slen characters of s.
+ */
+char *
+strnstr_ownimpl(s, find, slen)
+        const char *s;
+        const char *find;
+        size_t slen;
+{
+        char c, sc;
+        size_t len;
+
+        if ((c = *find++) != '\0') {
+                len = strlen(find);
+                do {
+                        do {
+                                if ((sc = *s++) == '\0' || slen-- < 1)
+                                        return (NULL);
+                        } while (sc != c);
+                        if (len > slen)
+                                return (NULL);
+                } while (strncmp(s, find, len) != 0);
+                s--;
+        }
+        return ((char *)s);
+}
+
+
 /**
  * use the Distributed S-Net placement operators for worker placement
  */
@@ -158,7 +187,7 @@ int SNetThreadingSpawn(snet_entity_t *ent)
 	int l2 = strlen(SNET_SINK_PREFIX);
 
 	if ( type != ENTITY_other) {
-		if (sosi_placement && (strnstr(name, SNET_SOURCE_PREFIX, l1) || strnstr(name, SNET_SINK_PREFIX, l2))) {
+		if (sosi_placement && (strnstr_ownimpl(name, SNET_SOURCE_PREFIX, l1) || strnstr_ownimpl(name, SNET_SINK_PREFIX, l2))) {
 			location = LPEL_MAP_OTHERS;		// sosi placemnet and entity is source/sink
 		} else if (dloc_placement) {
 			assert(location != -1);
