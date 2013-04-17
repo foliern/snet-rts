@@ -339,6 +339,7 @@ static void *SAC4SNetDataDeserialise( FILE *file)
      * in interesting behaviour...)
      */
     fscanf( file, "%s", datafile_name);
+	printf("open in sac4snet.c");
     datafile = fopen( datafile_name, "r");
     if( datafile == NULL) {
       Error( "Failed to open datafile");

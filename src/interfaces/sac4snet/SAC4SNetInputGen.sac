@@ -34,6 +34,7 @@ void report( bool fail, string msg) {
 File, string openFibreOutput( string prefix, string field)
 {
   filename = sprintf( "%s_%d_%s.fib", prefix, valueOf( recordNo), field);
+  printf("open in sac4snetInputgen.sac");
   err, handle = fopen( filename, "w");
   report( SysErr::fail( err), "Cannot open fibre output file");
   return( handle, filename);
@@ -50,6 +51,7 @@ File, string openFibreOutput( string prefix, string field)
 File StartOutput( string prefix)
 {
   xmlname = sprintf("%s.xml", prefix);
+  printf("open in sac4snetInputgen.sac");
   err, xmlfile = fopen( xmlname, "w");
   report( SysErr::fail( err), "Cannot open xml output file");
 

@@ -37,6 +37,7 @@
 
 static FILE *SNetInOpenFile(const char *file, const char *args)
 {
+	printf("open in networkinterface");
   FILE *fileptr = fopen(file, args);
 
   if(fileptr == NULL) {

@@ -16,6 +16,7 @@ extern size_t SNetRefAllocSize(snet_ref_t *ref);
 
 static void write_pid(void)
 {
+	printf("open in transmit.c");
     FILE *file = fopen("/sys/module/async_scc/parameters/pid", "w");
     if (file == NULL) {
         perror("Could not open module parameter");

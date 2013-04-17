@@ -170,6 +170,7 @@ void SNetThreadingMonitoringInit(char *fname)
   pthread_mutex_init( &queue_lock, NULL);
   pthread_cond_init(  &queue_cond, NULL);
 
+	printf("open in monitorer.c");
   mon_file = fopen(fname, "w");
   assert(mon_file != NULL);
 

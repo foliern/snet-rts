@@ -121,6 +121,7 @@ int SNetThreadingInit(int argc, char **argv)
 		if ( mon_flags & SNET_MON_MAP) {
 			snprintf(fname, 20, "n%02d_tasks.map", SNetDistribGetNodeId() );
 			/* create a map file */
+			printf("open in glue_decen");
 			mapfile = fopen(fname, "w");
 			assert( mapfile != NULL);
 			(void) fprintf(mapfile, "%s%c", LOG_FORMAT_VERSION, END_LOG_ENTRY);

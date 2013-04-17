@@ -369,6 +369,7 @@ static mon_worker_t *MonCbWorkerCreate( int wid)
 
 
 	/* open logfile */
+	printf("open nr1 in mon_snetc");
 	mon->outfile = fopen(fname, "w");
 	assert( mon->outfile != NULL);
 	(void) fprintf(mon->outfile, "%s%c", LOG_FORMAT_VERSION, END_LOG_ENTRY);
@@ -422,6 +423,7 @@ static mon_worker_t *MonCbWrapperCreate( mon_task_t *mt)
 	}
 
 	/* open logfile */
+	printf("open nr 2 in mon_snetc");
 	mon->outfile = fopen(fname, "w");
 	assert( mon->outfile != NULL);
 

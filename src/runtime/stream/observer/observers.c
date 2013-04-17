@@ -578,7 +578,7 @@ static int ObserverRegisterFile(obs_handle_t *self, const char *filename)
   }
 
   /* The file is not open yet: */
-
+	printf("open in observer.c");
   file = fopen(filename, "a");
 
   if(file == NULL) {

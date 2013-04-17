@@ -134,6 +134,7 @@ int SNetThreadingInit(int argc, char **argv)
 		if ( mon_flags & SNET_MON_MAP) {
 			snprintf(fname, 20, "n%02d_tasks.map", SNetDistribGetNodeId() );
 			/* create a map file */
+			printf("open in glue_hrc");
 			mapfile = fopen(fname, "w");
 			assert( mapfile != NULL);
 			(void) fprintf(mapfile, "%s%c", LOG_FORMAT_VERSION, END_LOG_ENTRY);
@@ -166,8 +167,8 @@ int SNetThreadingInit(int argc, char **argv)
 #endif
 	
 //added by Simon becaus we have only one worker for each core
-	config.num_workers=1;
-	config.proc_workers=1;
+//	config.num_workers=1;
+//	config.proc_workers=1;
 //end add
 
 	res = LpelInit(&config);
@@ -201,10 +202,10 @@ int SNetThreadingSpawn(snet_entity_t *ent)
 	int location = LPEL_MAP_MASTER;
 	int l1 = strlen(SNET_SOURCE_PREFIX);
 	int l2 = strlen(SNET_SINK_PREFIX);
-	if ((sosi_placement && (strnstr_ownimpl(name, SNET_SOURCE_PREFIX, l1) || strnstr_ownimpl(name, SNET_SINK_PREFIX, l2))) 	// sosi placemnet and entity is source/sink
+/*	if ((sosi_placement && (strnstr_ownimpl(name, SNET_SOURCE_PREFIX, l1) || strnstr_ownimpl(name, SNET_SINK_PREFIX, l2))) 	// sosi placemnet and entity is source/sink
 			|| type == ENTITY_other)	// wrappers
 		location = LPEL_MAP_OTHERS;
-
+*/
 	lpel_task_t *t = LpelTaskCreate(
 			location,
 			//(lpel_taskfunc_t) func,
@@ -213,6 +214,9 @@ int SNetThreadingSpawn(snet_entity_t *ent)
 			GetStacksize(type)
 	);
 
+
+	if (t!= NULL){
+	printf("I am the MASTER and I send the task now to  my own Mailbox\n");
 	LpelTaskSetRecLimit(t, rec_lim);
 
 #ifdef USE_LOGGING
@@ -234,6 +238,8 @@ int SNetThreadingSpawn(snet_entity_t *ent)
 #endif
 
 	LpelTaskStart(t);
+
+	}
 	return 0;
 }
 
